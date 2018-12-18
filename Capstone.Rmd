@@ -1,0 +1,20 @@
+---
+title: "Google Apps Marketability Factors"
+author: "Dr Ada Ajunwa"
+date: "December 18, 2018"
+output: html_document
+---
+
+A lot of applications are frequently created and hosted on Google Play Store. However, not many of these get downloaded as much as expected.
+
+The data was collected by scraping information from Google Play Store. It holds various exciting build and social information on android mobile applications. It can be used for both exploratory data analysis (EDA) and predicting how marketable an android mobile app is. 
+
+The problem is to ascertain the impact of variables such as minimum required android version, price, size, ratings, as well as any other significantly impacting variables on the marketablity (number of downloads) of an android mobile application.
+
+My prospective clients would be mobile application development companyies. It is believed that an understanding of the significant factors that influence the marketablity of a mobile application, would aid designers and developers in making informed decisions during application implementation and deployment. 
+
+The methodology would be an initial EDA to discover  outliers, missing data, variable relationships and so on. Based on this analysis, the effect of mobile application build and pricing on its marketablility would be determined. 
+
+My outputs would be a slide deck, a paper for publishing and code  
+
+Data source was from the [Kaggle's Google Play Store Apps dataset](https://www.kaggle.com/lava18/google-play-store-apps)
