@@ -1,0 +1,8 @@
+titanic_original <- read.csv("~/Data Science/titanic_original.csv")
+View(titanic_original)
+titanic_original$embarked  <- as.character(titanic_original$embarked)
+titanic_original <-transform(titanic_original, embarked = ifelse(embarked == "", "S", embarked))
+titanic_original <-transform(titanic_original, age = ifelse(is.na(age), mean(titanic_original$age, na.rm = TRUE), age))
+titanic_original <-transform(titanic_original, boat = ifelse(boat == "", "NA", boat))
+titanic_original <-titanic_original%>% mutate(has_cabin_number =ifelse(titanic_original$cabin=="", 0, 1))
+write.csv(titanic_original, file = "~/Data Science/titanic_clean.csv")
