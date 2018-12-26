@@ -13,25 +13,35 @@ googleplaystore_original$Size<- as.character(googleplaystore_original$Size)
 googleplaystore_original <-transform(googleplaystore_original , Size = ifelse(Size == "Varies with device", "NA", Size))
 googleplaystore_original$Size<- as.character(googleplaystore_original$Size)
 googleplaystore_original <-transform(googleplaystore_original , Size = ifelse(Size == "1,000+", "NA", Size))
-googleplaystore_original <-mutate(googleplaystore_original, AdjustedSize= case_when(grepl("M",Size) ~  as.numeric(sub("M", "", googleplaystore_original$Size))*1000,grepl("k",Size) ~  as.numeric(sub("k", "", googleplaystore_original$Size))*1 ))
+googleplaystore_original <-mutate(googleplaystore_original, AdjustedSize= case_when(grepl("M",Size) ~  as.numeric(sub("M", 
+                                                                                                                      "", googleplaystore_original$Size))*1000,grepl("k",Size) ~  as.numeric(sub("k", "", googleplaystore_original$Size))*1 ))
 googleplaystore_original$Installs<- as.character(googleplaystore_original$Installs)
-googleplaystore_original <-transform(googleplaystore_original , Installs = ifelse(grepl("\\+",googleplaystore_original$Installs), sub("\\+", "", googleplaystore_original$Installs), Installs))
+googleplaystore_original <-transform(googleplaystore_original , Installs = ifelse(grepl("\\+",googleplaystore_original
+                                                                                        $Installs), sub("\\+", "", googleplaystore_original$Installs), Installs))
 googleplaystore_original$Installs<- as.character(googleplaystore_original$Installs)
-googleplaystore_original <-transform(googleplaystore_original , Installs = ifelse(grepl("[A-Z]", Installs), "NA", Installs))
+googleplaystore_original <-transform(googleplaystore_original , Installs = ifelse(grepl("[A-Z]", Installs), "NA", 
+                                                                                  Installs))
 googleplaystore_original$Type<- as.character(googleplaystore_original$Type)
 googleplaystore_original%>% distinct(Type)
-googleplaystore_original <-transform(googleplaystore_original , Type = ifelse(Type == "NAN", "NA", Type))
+googleplaystore_original <-transform(googleplaystore_original , Type = ifelse(Type == "NaN", "NA", Type))
 googleplaystore_original <-transform(googleplaystore_original , Type = ifelse(Type == "0", "NA", Type))
+googleplaystore_original$Price<- as.character(googleplaystore_original$Price)
 googleplaystore_original <-transform(googleplaystore_original , Price= ifelse(grepl("[A-Z]", Price), "NA", Price))
+googleplaystore_original$Price<- as.character(googleplaystore_original$Price)
+googleplaystore_original <-transform(googleplaystore_original , Price= ifelse(grepl("\\$", Price), sub("\\$", "", 
+                                                                                                       googleplaystore_original$Price), Price))
 googleplaystore_original%>% distinct(ContentRating)
-googleplaystore_original <-transform(googleplaystore_original, ContentRating = ifelse(ContentRating == "", "NA", ContentRating))
+googleplaystore_original <-transform(googleplaystore_original, ContentRating = ifelse(ContentRating == "", "NA", 
+                                                                                      ContentRating))
 googleplaystore_original%>% distinct(Genres)
 googleplaystore_original$Genres<- as.character(googleplaystore_original$Genres)
 googleplaystore_original <-transform(googleplaystore_original , Genres = ifelse(Genres == "11-Feb-18", "NA", Genres)) 
 googleplaystore_original[which(grepl("[A-Z][a-z]({2})", googleplaystore_original$LastUpdated) ==FALSE), 11]
 googleplaystore_original$LastUpdated<- as.character(googleplaystore_original$LastUpdated)
-googleplaystore_original <-transform(googleplaystore_original , LastUpdated = ifelse(LastUpdated == "1.0.19", "NA", LastUpdated))
-googleplaystore_original <- data.frame(googleplaystore_original, str_split_fixed(googleplaystore_original$LastUpdated, "-", 3))
+googleplaystore_original <-transform(googleplaystore_original , LastUpdated = ifelse(LastUpdated == "1.0.19", "NA", 
+                                                                                     LastUpdated))
+googleplaystore_original <- data.frame(googleplaystore_original, str_split_fixed(googleplaystore_original$LastUpdated, 
+                                                                                 "-", 3))
 colnames(googleplaystore_original )[14] <- "Day"
 colnames(googleplaystore_original )[15] <- "Month"
 colnames(googleplaystore_original )[16] <- "Year"
@@ -41,5 +51,6 @@ googleplaystore_original$Year<- as.character(googleplaystore_original$Year)
 googleplaystore_original <-transform(googleplaystore_original , Year = ifelse(Year== "", "NA", Year))
 distinct(googleplaystore_original, AndroidVer)
 googleplaystore_original$AndroidVer <- as.character(googleplaystore_original$AndroidVer )
-googleplaystore_original <-transform(googleplaystore_original , AndroidVer = ifelse(AndroidVer == "Varies with device"|AndroidVer =="NaN"|AndroidVer =="", "NA", AndroidVer))
+googleplaystore_original <-transform(googleplaystore_original , AndroidVer = ifelse(AndroidVer == "Varies with device"|
+                                                                                      AndroidVer =="NaN"|AndroidVer =="", "NA", AndroidVer))
 write.csv(googleplaystore_original, file = "~/Data Science/googleplaystore_original_clean.csv")
