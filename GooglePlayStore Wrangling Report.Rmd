@@ -1,0 +1,36 @@
+---
+title: "GooglePlayStore Wrangling Report"
+author: "Dr Ada Ajunwa"
+date: "December 26, 2018"
+output: html_document
+---
+
+1. Removed Variable "CurrentVer"(last version of mobile app as at when scraped), and confirmed distinct value of each variable before making any adjustments, this aided my wrangling efforts
+2. Confirmed distinct values in the Category variable
+    - Changed "1.9"" in the Category variable to "NA" 
+3. Confirmed distinct values in the Ratings variable
+    - Converted "NaN" to "NA" in the Rating variable
+4. Searched for any occurrence of alphanumeric values in the Reviews variable
+    - Changed each alphanumeric value to "NA"
+5. Created the AdjustedSize variable from the Size variable:
+   - changed "varies with device" to "NA"
+   - changed "1000+" to "NA"
+   - removed all occurrences of "k" (kilobytes) from behind each size
+   - removed all occurrences of "M" (megabytes) from behind each size and multiplied the resultant value by 1000 (converted to kilobytes)
+6. Removed all occurrences of "+" from behind each value in the Installs variable to make them numeric values
+    - Searched for all occurrences of letters in the Installs variable, and changed them to "NA"
+7. Confirmed distinct values in the Type variable
+       - Changed all occurrences of "NaN" and "0" to "NA" in the Type variable
+8. Changed all non-numeric values in the Prices variable to "NA"
+9. Confirmed distinct values in the ContentRating variable
+      - Changed all empty values to "NA"
+10. Confirmed distinct values in the Genres variable
+      - Changed "11-Feb-18" to "NA"
+11. In the LatUpdated variable:
+      - got all values not containing the short month word format e.g. "Jan"
+      - changed "9.0.19" to "NA"
+      - split the LastUpdated variable into 3 columns and appended them to the data frame as "Day", "Month", and "Year"
+      - changed the empty value in the Month variable to "NA"
+      - changed the empty value in the Year variable to "NA"
+12. Confirmed distinct values in the AndroidVer variable
+      - Changed the values "Varies with device", "NaN", and the blank value to "NA"
