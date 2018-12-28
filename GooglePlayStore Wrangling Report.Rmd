@@ -21,15 +21,23 @@ output: html_document
     - Searched for all occurrences of letters in the Installs variable, and changed them to "NA"
 7. Confirmed distinct values in the Type variable
        - Changed all occurrences of "NaN" and "0" to "NA" in the Type variable
+<<<<<<< HEAD
 8. Confirmed distinct values in the Price variable
        - removed all occurrences of "$" from the front of each Price value to make them numeric
        - Changed all non-numeric values in the Price variable to "NA"
+=======
+8. Changed all non-numeric values in the Prices variable to "NA"
+>>>>>>> 63096847e0caa2685ebf629f658de83632491634
 9. Confirmed distinct values in the ContentRating variable
       - Changed all empty values to "NA"
 10. Confirmed distinct values in the Genres variable
       - Changed "11-Feb-18" to "NA"
 11. In the LatUpdated variable:
+<<<<<<< HEAD
       - got all values not containing the short month word format e.g. "Feb"
+=======
+      - got all values not containing the short month word format e.g. "Jan"
+>>>>>>> 63096847e0caa2685ebf629f658de83632491634
       - changed "9.0.19" to "NA"
       - split the LastUpdated variable into 3 columns and appended them to the data frame as "Day", "Month", and "Year"
       - changed the empty value in the Month variable to "NA"
