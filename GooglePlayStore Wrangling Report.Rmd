@@ -29,7 +29,7 @@ output: html_document
 10. Confirmed distinct values in the Genres variable
       - Changed "11-Feb-18" to "NA"
 11. In the LatUpdated variable:
-      - got all values not containing the short month word format e.g. "Jan"
+      - got all values not containing the short month word format e.g. "Feb"
       - changed "9.0.19" to "NA"
       - split the LastUpdated variable into 3 columns and appended them to the data frame as "Day", "Month", and "Year"
       - changed the empty value in the Month variable to "NA"

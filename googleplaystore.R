@@ -31,6 +31,7 @@ googleplaystore_original$Price<- as.character(googleplaystore_original$Price)
 googleplaystore_original <-transform(googleplaystore_original , Price= ifelse(grepl("\\$", Price), sub("\\$", "", 
                                                                                                        googleplaystore_original$Price), Price))
 googleplaystore_original%>% distinct(ContentRating)
+googleplaystore_original$ContentRating<- as.character(googleplaystore_original$ContentRating)
 googleplaystore_original <-transform(googleplaystore_original, ContentRating = ifelse(ContentRating == "", "NA", 
                                                                                       ContentRating))
 googleplaystore_original%>% distinct(Genres)
