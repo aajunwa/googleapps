@@ -33,15 +33,16 @@ googleplaystore_original <-transform(googleplaystore_original , Installs = ifels
 googleplaystore_original$Installs<- as.character(googleplaystore_original$Installs)
 googleplaystore_original <-transform(googleplaystore_original , Installs = ifelse(grepl("[A-Z]", Installs), "NA", 
                                                                                   Installs))
-googleplaystore_original$Installs<- as.character(googleplaystore_original$Installs)
-googleplaystore_original<-transform(googleplaystore_original , Installs = gsub(",","", googleplaystore_original$Installs))
 googleplaystore_original <- mutate(googleplaystore_original, AdjustedInstall= case_when(googleplaystore_original$Install=="0" ~ "No Install", 
                                                                                         googleplaystore_original$Install=="1"|googleplaystore_original$Install=="5"|googleplaystore_original$Install=="10"|googleplaystore_original$Install=="50"|googleplaystore_original$Install=="100"|googleplaystore_original$Install=="500" ~ "Extremely Small", 
                                                                                         googleplaystore_original$Install=="1,000"|googleplaystore_original$Install=="5,000"|googleplaystore_original$Install=="10,000" ~ "Very Small", 
                                                                                         googleplaystore_original$Install=="50,000"|googleplaystore_original$Install=="100,000"|googleplaystore_original$Install=="500,000" ~ "Small",
-                                                                                        googleplaystore_original$Install=="1,000,000"|googleplaystore_original$Install=="5,000,000"|googleplaystore_original$Install=="10,000,000" ~ "medium", 
+                                                                                        googleplaystore_original$Install=="1,000,000"|googleplaystore_original$Install=="5,000,000"|googleplaystore_original$Install=="10,000,000" ~ "Medium", 
                                                                                         googleplaystore_original$Install=="50,000,000"|googleplaystore_original$Install=="100,000,000"|googleplaystore_original$Install=="500,000,000" ~ "Large", 
                                                                                         googleplaystore_original$Install=="1,000,000,000" ~ "Very Large"))
+googleplaystore_original$AdjustedInstall<- ordered(googleplaystore_original$AdjustedInstall, levels=c("NA","No Install","Extremely Small","Very Small","Small","Medium","Large","Very Large"))
+googleplaystore_original$Installs<- as.character(googleplaystore_original$Installs)
+googleplaystore_original<-transform(googleplaystore_original , Installs = gsub(",","", googleplaystore_original$Installs))
 googleplaystore_original$Installs<- ordered(googleplaystore_original$Installs, levels=c("NA","0","1","5","10","50","100","500","1000","5000","10000","50000","100000","500000","1000000","5000000","10000000","50000000","100000000","500000000", "1000000000"))
 googleplaystore_original$Type<- as.character(googleplaystore_original$Type)
 googleplaystore_original%>% distinct(Type)
@@ -80,6 +81,17 @@ googleplaystore_original <-transform(googleplaystore_original , AndroidVer = ife
 write.csv(googleplaystore_original, file = "~/Data Science/googleplaystore_original_clean.csv")
 
 #To see how number of Installs are affected by mean Ratings
-mean_rate_by_installs <- aggregate(googleplaystore_original[, 3], list(googleplaystore_original$Installs), sum, na.rm=TRUE)
-colnames(mean_rate_by_installs)[1] <- "Installs"
-colnames(mean_rate_by_installs)[2] <- "MeanRating"
+installs_by_sum_rating <- aggregate(googleplaystore_original[, 3], list(googleplaystore_original$Installs), sum, na.rm=TRUE)
+colnames(installs_by_sum_rating)[1] <- "Installs"
+colnames(installs_by_sum_rating)[2] <- "SumRating"
+
+#The bar chart shows that paid Apps had less downloads than free Apps and less Apps where paid for
+ggplot(googleplaystore_original, aes(Installs, fill=Type)) +geom_bar()+facet_grid(Type ~ .)
+ggplot(googleplaystore_original, aes(AdjustedInstall, fill=Type)) +geom_bar()+facet_grid(Type ~ .)
+
+#The density graph shows that Rating has an outlier with value 19
+#Remove outlier
+#Density graph now shows that Rating is left skewed
+ggplot(googleplaystore_original, aes(Rating)) +geom_density()
+googleplaystore_original<-filter(googleplaystore_original,Rating != 19)
+ggplot(googleplaystore_original, aes(Rating)) +geom_density()
