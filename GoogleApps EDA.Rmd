@@ -6,38 +6,38 @@ output: html_document
 ---
 
 Load data and libraries
-
+Order variable Installs
 ```{r}
 googleplaystore_original <- read.csv("~/Data Science/googleplaystore_original_Clean.csv")
 head(googleplaystore_original)
 library("dplyr")
 library("stringr")
 library("ggplot2")
-```
-The density graph below shows that Rating has an outlier with value 19
-Remove outlier
-Density graph now shows that Rating is left skewed
-```{r}
-googleplaystore_original$Installs <- as.character(googleplaystore_original$Installs)
+googleplaystore_original$Installs<-as.character(googleplaystore_original$Installs)
 googleplaystore_original$Installs<- ordered(googleplaystore_original$Installs, levels=c("NA","0","1","5","10","50","100","500","1000","5000","10000","50000","100000","500000","1000000","5000000","10000000","50000000","100000000","500000000", "1000000000"))
-ggplot(googleplaystore_original, aes(Rating)) +geom_density()
-googleplaystore_original<-filter(googleplaystore_original,Rating != 19)
-ggplot(googleplaystore_original, aes(Rating)) +geom_density()
+str(googleplaystore_original)
 ```
-
+Most apps had downloads of 1000000 and above with an average number of downloads of 15,464,339 (between 
+10,000,000 and 50,000,000)
+```{r}
+ggplot(googleplaystore_original, aes(x=Installs))+geom_bar()
+summarise(googleplaystore_original, avg = mean(as.numeric(as.character(Installs)), na.rm = TRUE))
+```
 Distinct number of app categories is 33
 Top 50% of apps by category (top 3 categories are Family, Game and Tools)
+Bottom 3 categories with worst presence (Beauty, Parenting, Comics)
 ```{r}
 distinct(googleplaystore_original,Category)
 top_50_category<-arrange(top_n(count(googleplaystore_original, Category), n=17),desc(n))
+top_50_category
 ggplot(inner_join(googleplaystore_original, top_50_category, by = "Category"), aes(AdjustedInstall, fill=Category)) +geom_bar()+facet_grid(Category ~ .)
+arrange(top_n(count(googleplaystore_original, Category), n=-3),desc(n))
 ```
-Among apps with extremely small downloads (1-500), Family apps have the largest presence, followed by Tool apps, then Medical apps 
-Among apps with very small downloads (1000-10000), Family apps have the largest presence, followed by Tool apps, then Medical apps 
-Among apps with small downloads (50000-500000), Family apps have the largest presence, followed by Gaming apps, then Tool apps 
-Among apps with medium downloads (1000000-10000000), Family apps have the largest presence, followed by Gaming apps, then Tool apps 
+
+Among apps with extremely and very small downloads (1-10000), Family apps have the largest presence, followed by Tool apps, then Medical apps 
+Among apps with small and medium downloads (50000-10000000), Family apps have the largest presence, followed by Gaming apps, then Tool apps 
 Among apps with large downloads (50000000-500000000), Gaming apps have the largest presence, followed by Family apps, then Communication apps 
-Among apps with very large downloads (50000000-500000000), Communication apps have the largest presence, followed by Social apps, then Gaming apps 
+Among apps with very large downloads (1000000000), Communication apps have the largest presence, followed by Social apps, then Gaming apps 
 ```{r}
 ggplot(filter(googleplaystore_original,AdjustedInstall =="Extremely Small"), aes(Category, fill= Category)) +geom_bar()
 ggplot(filter(googleplaystore_original,AdjustedInstall =="Very Small"), aes(Category, fill= Category)) +geom_bar()
@@ -45,29 +45,60 @@ ggplot(filter(googleplaystore_original,AdjustedInstall =="Small"), aes(Category,
 ggplot(filter(googleplaystore_original,AdjustedInstall =="Medium"), aes(Category, fill= Category)) +geom_bar()
 ggplot(filter(googleplaystore_original,AdjustedInstall =="Large"), aes(Category, fill= Category)) +geom_bar()
 ```
-
-The scatter plot below shows that Rating has a weak positive effect on Installs (number of downloads). Therefore, higher ratings, bring about more downloads
+Overall, the communication apps have the highest average downloads, followed by Social apps, then Video_Player apps
 ```{r}
-ggplot(googleplaystore_original, aes(x=Rating, y= Installs)) +geom_point()
+Category_by_mean_installs <- aggregate(as.numeric(as.character(googleplaystore_original[, 7])), list(googleplaystore_original$Category), mean, na.rm=TRUE)
+colnames(Category_by_mean_installs)[1] <- "Category"
+colnames(Category_by_mean_installs)[2] <- "MeanInstalls"
+Category_by_mean_installs
+ggplot(Category_by_mean_installs, aes(x=MeanInstalls, y= Category)) +geom_point()
 ```
-
-To see how number of Installs are affected by sum of Ratings
-The scatter plot below shows that the sum of Ratings has a strong positive effect on Installs
+The density graph shows that Rating has an outlier with value 19
+Remove outlier
+Density graph now shows that Rating is left skewed with an average rating of 4.193338 
 ```{r}
-installs_by_sum_rating <- aggregate(as.numeric(googleplaystore_original[, 3]), list(googleplaystore_original$Installs), sum, na.rm=TRUE)
-colnames(installs_by_sum_rating)[1] <- "Installs"
-colnames(installs_by_sum_rating)[2] <- "SumRating"
-ggplot(installs_by_sum_rating, aes(x=SumRating, y= Installs)) +geom_point()
+ggplot(googleplaystore_original, aes(Rating)) +geom_density()
+googleplaystore_original<-filter(googleplaystore_original,Rating != 19)
+ggplot(googleplaystore_original, aes(Rating)) +geom_density()
+summarise(googleplaystore_original, avg = mean(Rating, na.rm = TRUE))
 ```
-
-The scatter plot below shows that SizeKB (App size) seems to have a very weak positive effect on Installs (number of downloads)
+To see how number of Installs are affected by average Ratings
+The scatter plot below shows that the relationship between the number of app downloads and mean rating follows a curved non-linear model. The model shows that apps with small number of downloads from 5000 and below, had an increase in mean rating as the number of downloads reduced, this demonstrates that apps with downloads fewer than 5000 are negatively affected by ratings. On the other hand, the mean ratings of apps with downloads between 5,000 and 1,000,000 increase as the number of downloads increase, this illustrates that apps with this range of downloads are positively influenced by ratings. Also, the mean ratings of apps with downloads 1,000,000 and above decrease as the number of downloads increase, thus displaying that apps with 1,000,000+ downloads are negatively impacted by ratings.
 ```{r}
-ggplot(googleplaystore_original, aes(x=SizeKB, y= Installs)) +geom_point()
+installs_by_mean_rating <- aggregate(googleplaystore_original[, 4], list(googleplaystore_original$Installs), mean, na.rm=TRUE)
+colnames(installs_by_mean_rating)[1] <- "Installs"
+colnames(installs_by_mean_rating)[2] <- "MeanRating"
+ggplot(installs_by_mean_rating, aes(x=MeanRating, y= Installs)) +geom_point() + xlim(4,5)
 ```
-
-The scatter plot below shows that Reviews (number of reviews) has no effect on Installs (number of downloads)
+The scatter plot shows that there is a  strong positive relationship between average reviews and number of Installs
 ```{r}
-ggplot(googleplaystore_original, aes(x=SizeKB, y= Installs)) +geom_point()
+installs_by_mean_reviews <- aggregate(googleplaystore_original[, 5], list(googleplaystore_original$Installs), mean, na.rm=TRUE)
+colnames(installs_by_mean_reviews)[1] <- "Installs"
+colnames(installs_by_mean_reviews)[2] <- "MeanReviews"
+installs_by_mean_reviews
+ggplot(installs_by_mean_reviews, aes(x=MeanReviews, y= Installs)) +geom_point()
+```
+Density graph now shows that Size is right skewed with an average size of 21516.53
+The scatter plot shows that there is a positive relationship between average app size and number of Installs
+```{r}
+ggplot(googleplaystore_original, aes(SizeKB)) +geom_density()
+summarise(googleplaystore_original, avg = mean(SizeKB, na.rm = TRUE))
+installs_by_mean_size <- aggregate(googleplaystore_original[, 14], list(googleplaystore_original$Installs), mean, na.rm=TRUE)
+colnames(installs_by_mean_size)[1] <- "Installs"
+colnames(installs_by_mean_size)[2] <- "MeanSize"
+installs_by_mean_size
+ggplot(installs_by_mean_size, aes(x=MeanSize, y= Installs)) +geom_point()
+```
+Density graph now shows that Price is right skewed with an average of 1.027368
+The scatter plot shows that there is a slight negative relationship between average app price and number of Installs
+```{r}
+ggplot(googleplaystore_original, aes(Price)) +geom_density()
+summarise(googleplaystore_original, avg = mean(Price, na.rm = TRUE))
+installs_by_mean_price <- aggregate(googleplaystore_original[, 9], list(googleplaystore_original$Installs), mean, na.rm=TRUE)
+colnames(installs_by_mean_price)[1] <- "Installs"
+colnames(installs_by_mean_price)[2] <- "MeanPrice"
+installs_by_mean_price
+ggplot(installs_by_mean_price, aes(x=MeanPrice, y= Installs)) +geom_point()+xlim(0,3.2)
 ```
 
 The bar chart shows that paid Apps had less downloads than free Apps and less Apps where paid for
@@ -75,18 +106,18 @@ The bar chart shows that paid Apps had less downloads than free Apps and less Ap
 ggplot(googleplaystore_original, aes(Installs, fill=Type)) +geom_bar()+facet_grid(Type ~ .)
 ggplot(googleplaystore_original, aes(AdjustedInstall, fill=Type)) +geom_bar()+facet_grid(Type ~ .)
 ```
-
-The scatter plot below shows that SizeKB (app size) has no effeCT on Installs(number of downloads)
-```{r}
-ggplot(googleplaystore_original, aes(x=SizeKB, y= Installs)) +geom_point()
-```
-
-The bar chart below shows that apps that require a minimum install versions in the 4s are the most downloaded accross all install levels. This is followed by apps that require version 2s
+The bar chart below shows that apps that require a minimum install versions in the 4s are the most downloaded accross all install levels
+This followed by apps that require version 2s
 ```{r}
 ggplot(filter(googleplaystore_original, MinimumVer!="NA"), aes( x= AdjustedInstall, fill =MinimumVer)) +geom_bar(position = "dodge")
 ```
-
-The bar chart below shows that apps that require a minimum install version in the 2s were downloaded most between 2011 and 2015.Downloads of apps requiring version 4s took over in 2016, and grew exponentialy all the way to 2018
+The bar chart below shows that apps that require a minimum install version in the 2s were downloaded most between 2011 and 2015
+Downloads of apps requiring version 4s took over in 2016, and grew exponentialy all the way to 2018
 ```{r}
 ggplot(filter(googleplaystore_original, MinimumVer!="NA"), aes( x= Year, fill =MinimumVer)) +geom_bar(position = "dodge")
+```
+Top performing app categories (99 percentile or more in Reviews, rating and number of Installs) are Gaming apps, Communication apps, Family apps and Social apps
+```{r}
+top<-filter(googleplaystore_original, Reviews >=quantile(googleplaystore_original$Reviews, c(.99), na.rm = TRUE)& Reviews >=quantile(googleplaystore_original$Rating, c(.99), na.rm = TRUE)& quantile(as.numeric(as.character(googleplaystore_original$Installs)), c(.99), na.rm = TRUE))
+arrange(top_n(count(top, Category), n=3),desc(n))
 ```
