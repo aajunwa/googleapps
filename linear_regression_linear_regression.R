@@ -27,7 +27,7 @@ list.files("dataSets") # files in the dataSets folder
 ## ────────────────────────
 
 # read the states data
-states.data <- readRDS("dataSets/states.rds") 
+states.data <- readRDS("~/Data Science/linear_regression_dataSets_states.rds") 
 #get labels
 states.info <- data.frame(attributes(states.data)[c("names", "var.labels")])
 #look at last few labels
@@ -217,4 +217,4 @@ energy_summary3
 ##   2. Try adding region to the model. Are there significant differences
 ##      across the four regions?
 summary(lm(energy ~ metro*income + region, data = states.data))
-The North Eastern region has a significant negative correlation to energy. However, the other regions have no probability significance in predicting energy.
+##The North Eastern region has a significant negative correlation to energy. However, the other regions have no probability significance in predicting energy.
