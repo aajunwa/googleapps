@@ -3,6 +3,8 @@ View(googleplaystore_original)
 library("dplyr")
 library("stringr")
 library("ggplot2")
+library("caTools")
+library(MASS)
 
 googleplaystore_original%>% distinct(Category)
 googleplaystore_original$Category<- as.character(googleplaystore_original$Category)
@@ -36,14 +38,20 @@ googleplaystore_original <-transform(googleplaystore_original , Installs = ifels
 googleplaystore_original$Installs<- as.character(googleplaystore_original$Installs)
 googleplaystore_original <-transform(googleplaystore_original , Installs = ifelse(grepl("[A-Z]", Installs), "NA", 
                                                                                   Installs))
-googleplaystore_original <- mutate(googleplaystore_original, AdjustedInstall= case_when(googleplaystore_original$Install=="0" ~ "No Install", 
-                                                                                        googleplaystore_original$Install=="1"|googleplaystore_original$Install=="5"|googleplaystore_original$Install=="10"|googleplaystore_original$Install=="50"|googleplaystore_original$Install=="100"|googleplaystore_original$Install=="500" ~ "Extremely Small", 
-                                                                                        googleplaystore_original$Install=="1,000"|googleplaystore_original$Install=="5,000"|googleplaystore_original$Install=="10,000" ~ "Very Small", 
-                                                                                        googleplaystore_original$Install=="50,000"|googleplaystore_original$Install=="100,000"|googleplaystore_original$Install=="500,000" ~ "Small",
-                                                                                        googleplaystore_original$Install=="1,000,000"|googleplaystore_original$Install=="5,000,000"|googleplaystore_original$Install=="10,000,000" ~ "Medium", 
-                                                                                        googleplaystore_original$Install=="50,000,000"|googleplaystore_original$Install=="100,000,000"|googleplaystore_original$Install=="500,000,000" ~ "Large", 
-                                                                                        googleplaystore_original$Install=="1,000,000,000" ~ "Very Large"))
-googleplaystore_original$AdjustedInstall<- ordered(googleplaystore_original$AdjustedInstall, levels=c("NA","No Install","Extremely Small","Very Small","Small","Medium","Large","Very Large"))
+googleplaystore_original <- mutate(googleplaystore_original, AdjustedInstall2= case_when(googleplaystore_original$Install=="0"|googleplaystore_original$Install=="1"|googleplaystore_original$Install=="5"|googleplaystore_original$Install=="10"|googleplaystore_original$Install=="50"|googleplaystore_original$Install=="100"|googleplaystore_original$Install=="500" ~ "1",
+                                                                                         googleplaystore_original$Install=="1,000"|googleplaystore_original$Install=="5,000"|googleplaystore_original$Install=="10,000"|googleplaystore_original$Install=="50,000"|googleplaystore_original$Install=="100,000"|googleplaystore_original$Install=="500,000"|googleplaystore_original$Install=="1,000,000" ~ "2",
+                                                                                         googleplaystore_original$Install=="5,000,000"|googleplaystore_original$Install=="10,000,000"|googleplaystore_original$Install=="50,000,000"|googleplaystore_original$Install=="100,000,000"|googleplaystore_original$Install=="500,000,000"|googleplaystore_original$Install=="1,000,000,000"  ~ "3",
+                                                                                        ))
+googleplaystore_original$AdjustedInstall2<- ordered(googleplaystore_original$AdjustedInstall2, levels=c("1","2","3"))
+
+googleplaystore_original <- mutate(googleplaystore_original, AdjustedInstall2= case_when(googleplaystore_original$Install=="0" ~ "No Install",   
+                                                                                         googleplaystore_original$Install=="1"|googleplaystore_original$Install=="5"|googleplaystore_original$Install=="10"|googleplaystore_original$Install=="50"|googleplaystore_original$Install=="100"|googleplaystore_original$Install=="500" ~ "Extremely Small",
+                                                                                         googleplaystore_original$Install=="1,000"|googleplaystore_original$Install=="5,000"|googleplaystore_original$Install=="10,000" ~ "Very Small",
+                                                                                         googleplaystore_original$Install=="50,000"|googleplaystore_original$Install=="100,000"|googleplaystore_original$Install=="500,000" ~ "Small",
+                                                                                         googleplaystore_original$Install=="1,000,000"|googleplaystore_original$Install=="5,000,000"|googleplaystore_original$Install=="10,000,000" ~ "Medium",
+                                                                                         googleplaystore_original$Install=="50,000,000"|googleplaystore_original$Install=="100,000,000"|googleplaystore_original$Install=="500,000,000" ~ "Large",
+                                                                                         googleplaystore_original$Install=="1,000,000,000" ~ "Very Large"))
+googleplaystore_original$AdjustedInstall2<- ordered(googleplaystore_original$AdjustedInstall2, levels=c("NA","No Install","Extremely Small","Very Small","Small","Medium","Large","Very Large"))
 googleplaystore_original$Installs<- as.character(googleplaystore_original$Installs)
 googleplaystore_original<-transform(googleplaystore_original , Installs = gsub(",","", googleplaystore_original$Installs))
 googleplaystore_original$Installs<- ordered(googleplaystore_original$Installs, levels=c("NA","0","1","5","10","50","100","500","1000","5000","10000","50000","100000","500000","1000000","5000000","10000000","50000000","100000000","500000000", "1000000000"))
@@ -70,9 +78,9 @@ googleplaystore_original <-transform(googleplaystore_original , LastUpdated = if
                                                                                      LastUpdated))
 googleplaystore_original <- data.frame(googleplaystore_original, str_split_fixed(googleplaystore_original$LastUpdated, 
                                                                                  "-", 3))
-colnames(googleplaystore_original )[16] <- "Day"
-colnames(googleplaystore_original )[17] <- "Month"
-colnames(googleplaystore_original )[18] <- "Year"
+colnames(googleplaystore_original )[17] <- "Day"
+colnames(googleplaystore_original )[18] <- "Month"
+colnames(googleplaystore_original )[19] <- "Year"
 googleplaystore_original$Month<- as.character(googleplaystore_original$Month)
 googleplaystore_original <-transform(googleplaystore_original , Month = ifelse(Month == "", "NA", Month))
 googleplaystore_original$Year<- as.character(googleplaystore_original$Year)
@@ -83,6 +91,7 @@ googleplaystore_original <-transform(googleplaystore_original , AndroidVer = ife
                                                                                       AndroidVer =="NaN"|AndroidVer =="", "NA", AndroidVer))
 googleplaystore_original<-mutate(googleplaystore_original, MinimumVer= case_when(grepl("^1",googleplaystore_original$AndroidVer) ~ "Version 1s",grepl("^2",googleplaystore_original$AndroidVer) ~ "Version 2s",grepl("^3",googleplaystore_original$AndroidVer) ~ "Version 3s",grepl("^4",googleplaystore_original$AndroidVer) ~ "Version 4s",grepl("^5",googleplaystore_original$AndroidVer) ~ "Version 5s",grepl("^6",googleplaystore_original$AndroidVer) ~ "Version 6s",grepl("^7",googleplaystore_original$AndroidVer) ~ "Version 7s",grepl("^8",googleplaystore_original$AndroidVer) ~ "Version 8s"))
 googleplaystore_original$MinimumVer<- ordered(googleplaystore_original$MinimumVer, levels=c("NA", "Version 1s","Version 2s","Version 3s","Version 4s","Version 5s","Version 6s","Version 7s","Version 8s"))
+googleplaystore_original <- filter(googleplaystore_original, Installs !="NA")
 write.csv(googleplaystore_original, file = "~/Data Science/googleplaystore_original_clean.csv")
 
 #Most apps had downloads of 1000000 and above with an average number of downloads of 15,464,339 (between 10,000,000 and 50,000,000)
