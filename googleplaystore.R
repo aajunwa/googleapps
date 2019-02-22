@@ -7,6 +7,10 @@ library("caTools")
 library(MASS)
 library(rpart)
 library(rpart.plot)
+library(caret)
+library(doSNOW)
+library(xgboost)
+library(e1071)
 
 #Change 1.9 to NA in Category variable
 googleplaystore_original%>% distinct(Category)
@@ -95,9 +99,9 @@ googleplaystore_original <-transform(googleplaystore_original , LastUpdated = if
 #Split LastUpdated variable into Day, Month and Year variables
 googleplaystore_original <- data.frame(googleplaystore_original, str_split_fixed(googleplaystore_original$LastUpdated, 
                                                                                  "-", 3))
-colnames(googleplaystore_original )[17] <- "Day"
-colnames(googleplaystore_original )[18] <- "Month"
-colnames(googleplaystore_original )[19] <- "Year"
+colnames(googleplaystore_original )[16] <- "Day"
+colnames(googleplaystore_original )[17] <- "Month"
+colnames(googleplaystore_original )[18] <- "Year"
 #Change blank values to NA for variable Month
 googleplaystore_original$Month<- as.character(googleplaystore_original$Month)
 googleplaystore_original <-transform(googleplaystore_original , Month = ifelse(Month == "", "NA", Month))
@@ -112,6 +116,13 @@ googleplaystore_original <-transform(googleplaystore_original , AndroidVer = ife
 #AndroidVer values are coded based on the first number of each version, assigned to a new variable MinimumVer: 
 googleplaystore_original<-mutate(googleplaystore_original, MinimumVer= case_when(grepl("^1",googleplaystore_original$AndroidVer) ~ "Version 1s",grepl("^2",googleplaystore_original$AndroidVer) ~ "Version 2s",grepl("^3",googleplaystore_original$AndroidVer) ~ "Version 3s",grepl("^4",googleplaystore_original$AndroidVer) ~ "Version 4s",grepl("^5",googleplaystore_original$AndroidVer) ~ "Version 5s",grepl("^6",googleplaystore_original$AndroidVer) ~ "Version 6s",grepl("^7",googleplaystore_original$AndroidVer) ~ "Version 7s",grepl("^8",googleplaystore_original$AndroidVer) ~ "Version 8s"))
 googleplaystore_original$MinimumVer<- ordered(googleplaystore_original$MinimumVer, levels=c("NA", "Version 1s","Version 2s","Version 3s","Version 4s","Version 5s","Version 6s","Version 7s","Version 8s"))
+#Update NA values in SizeKB variable with the mean of SizeKB values
+googleplaystore_original$SizeKB[which(is.na(googleplaystore_original$SizeKB))]<- mean(googleplaystore_original$SizeKB,na.rm = TRUE)
+#Update NA values in Rating variable with the mean of Rating values
+googleplaystore_original$Rating[which(is.na(googleplaystore_original$Rating))]<- mean(googleplaystore_original$Rating,na.rm = TRUE)
+#Replace NAs in MinimunVer with most frequent value
+summary(googleplaystore_original$MinimumVer)
+googleplaystore_original$MinimumVer[which(is.na(googleplaystore_original$MinimumVer))]<- "Version 4s"
 #Exclude observations with AdjustedInstall2 = NA
 googleplaystore_original <- filter(googleplaystore_original, AdjustedInstall2 !="NA")
 #Save in computer path as googleplaystore_original_clean.csv
@@ -141,13 +152,13 @@ ggplot(filter(googleplaystore_original,AdjustedInstall =="Very Small"), aes(Cate
 ggplot(filter(googleplaystore_original,AdjustedInstall =="Small"), aes(Category, fill= Category)) +geom_bar()
 ggplot(filter(googleplaystore_original,AdjustedInstall =="Medium"), aes(Category, fill= Category)) +geom_bar()
 ggplot(filter(googleplaystore_original,AdjustedInstall =="Large"), aes(Category, fill= Category)) +geom_bar()
-
+ggplot(filter(googleplaystore_original,AdjustedInstall =="Very Large"), aes(Category, fill= Category)) +geom_bar()
 #Overall, the communication apps have the highest average downloads, followed by Social apps, then Video_Player apps
 Category_by_mean_installs <- aggregate(as.numeric(as.character(googleplaystore_original[, 6])), list(googleplaystore_original$Category), mean, na.rm=TRUE)
 colnames(Category_by_mean_installs)[1] <- "Category"
 colnames(Category_by_mean_installs)[2] <- "MeanInstalls"
 Category_by_mean_installs
-ggplot(Category_by_mean_installs, aes(x=MeanInstalls, y= Category)) +geom_point()
+ggplot(Category_by_mean_installs, aes(y= Category, x=MeanInstalls)) +geom_point()
 
 #The density graph shows that Rating has an outlier with value 19
 #Remove outlier
@@ -210,14 +221,16 @@ arrange(top_n(count(top, Category), n=3),desc(n))
 
 #Change Installs variable back to category type
 googleplaystore_original$Installs<- as.character(googleplaystore_original$Installs)
+googleplaystore_original<- googleplaystore_original[,installc(Rating+Price+SizeKB+MinimumVer)]
 
 #Split into training and testing set
 set.seed(3000)
-split = sample.split(googleplaystore_original$Installs, SplitRatio = 0.7)
+googleplaystore_original<- googleplaystore_original[,c("AdjustedInstall2", "Reviews","Rating","Price","SizeKB","MinimumVer")]
+split = sample.split(googleplaystore_original$AdjustedInstall2, SplitRatio = 0.7)
 training = subset(googleplaystore_original, split==TRUE)
 testing = subset(googleplaystore_original, split==FALSE)
 #Build the Classification tree model
-tree = rpart(AdjustedInstall2 ~ Rating+Price+SizeKB+MinimumVer, data =training, method="class", control = rpart.control(minbucket = 100))
+tree = rpart(AdjustedInstall2 ~ ., data =training, method="class", control = rpart.control(minbucket = 100))
 #Plot the decision tree model
 rpart.plot(tree)
 #Predict for the training set using the Classisfication tree model
@@ -229,14 +242,19 @@ sum(diag(t))/sum(t)
 treepredict1 = predict(tree, newdata = testing, type="class")
 t1<-table(testing$AdjustedInstall2, treepredict1)
 #Get prediction accuracy of testing set and compare with accuracy of training set
+#Both stand at 89%
 sum(diag(t1))/sum(t1)
-#Get the AUC for each classification type
-treepredictprob1 = predict(tree, newdata = testing, type="prob")
-auc(testing$AdjustedInstall2, treepredictprob1[,1])
-auc(testing$AdjustedInstall2, treepredictprob1[,2])
-auc(testing$AdjustedInstall2, treepredictprob1[,3])
-#Plot the AUROC for each classification type
-plot(roc(testing$AdjustedInstall2, treepredictprob1[,1]))
-plot(roc(testing$AdjustedInstall2, treepredictprob1[,2]))
-plot(roc(testing$AdjustedInstall2, treepredictprob1[,3]))
-
+#A 10 fold Cross validation on the training set using the caret function gives a higher accuracy 
+# set control and grid
+tcontrol<-trainControl(method="repeatedcv", number=10, repeats=3, search="grid")
+tunegrid<-expand.grid(eta=c(0.05,0.075,0.1),nrounds=c(50,75,100), max_depth=6:8,min_child_weight=c(2.0,2.25,2.5),colsample_bytree = c(0.3,0.4,0.5),gamma=0, subsample=1)
+#Train the data using 2 parallel CPU threads
+cl<- makeCluster(2, type ="SOCK")
+registerDoSNOW(cl)
+traincv<-train(AdjustedInstall2 ~ ., data = training, method ="xgbTree",tuneGrid=tunegrid, trcontrol= tcontrol)
+stopCluster(cl)
+#Predict the model using the cross validated trained data
+preds<- predict(traincv, testing)
+#Build the confusion matrix
+#Accuracy with cross validated data stands at 91%
+confusionMatrix(preds, testing$AdjustedInstall2)
