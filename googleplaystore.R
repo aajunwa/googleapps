@@ -11,6 +11,7 @@ library(caret)
 library(doSNOW)
 library(xgboost)
 library(e1071)
+library (randomForest)
 
 #Change 1.9 to NA in Category variable
 googleplaystore_original%>% distinct(Category)
@@ -258,3 +259,13 @@ preds<- predict(traincv, testing)
 #Build the confusion matrix
 #Accuracy with cross validated data stands at 91%
 confusionMatrix(preds, testing$AdjustedInstall2)
+#Build a random forest model with all 5 independent variables
+treerandom<- randomForest(AdjustedInstall2 ~ ., data =training)
+treerandom
+#Predict testing set with random tree model
+predictrandom<-predict(treerandom, testing)
+#Build confusion matrix and get accuracy
+table(testing$AdjustedInstall2, predictrandom)
+sum(diag(trandom))/sum(trandom)
+#Get level of variable influence on number of downloads
+importance(treerandom)
